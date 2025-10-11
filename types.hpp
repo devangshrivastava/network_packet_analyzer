@@ -10,7 +10,7 @@
 #include <cstdint>
 
 // ---------------------------------------------
-// Thread-Safe Queue
+// Thread-Safe Queue Template
 // ---------------------------------------------
 template <typename T>
 class ThreadSafeQueue {
@@ -43,7 +43,7 @@ private:
 };
 
 // ---------------------------------------------
-// Data Structures
+// Packet Data Structures
 // ---------------------------------------------
 struct Packet {
     std::vector<uint8_t> data;
@@ -60,40 +60,20 @@ struct ParsedPacket {
     std::chrono::system_clock::time_point timestamp;
 };
 
-struct EthernetHeader {
-    uint8_t  dest_mac[6];
-    uint8_t  src_mac[6];
-    uint16_t ethertype;
-};
-static_assert(sizeof(EthernetHeader) == 14, "EthernetHeader must be 14 bytes");
-
+// ---------------------------------------------
+// Configuration
+// ---------------------------------------------
 enum class OutputFormat { CSV, JSON };
 
 struct Config {
     OutputFormat format = OutputFormat::CSV;
     std::string out_file = "packets.csv";
-    int flush_interval = 3;
-    int flush_count = 10;
+    std::string interface = "wlp0s20f3";
+    int flush_interval = 3;   // seconds
+    int flush_count = 10;     // packets
 };
 
 // ---------------------------------------------
 // Global State
 // ---------------------------------------------
 extern std::atomic<bool> g_running;
-
-// ---------------------------------------------
-// Function Declarations
-// ---------------------------------------------
-extern "C" void handle_sigint(int);
-
-void capture_thread(int sockfd, ThreadSafeQueue<Packet>& queue);
-
-void parser_thread(ThreadSafeQueue<Packet>& queue, 
-                   ThreadSafeQueue<ParsedPacket>& parsed_queue);
-
-void logger_thread(ThreadSafeQueue<ParsedPacket>& parsed_queue, 
-                   const Config& cfg);
-
-Config parse_args(int argc, char* argv[]);
-
-int create_raw_socket(const char* if_name);
